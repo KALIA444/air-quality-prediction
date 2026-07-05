@@ -14,6 +14,23 @@ une **application web**, du **monitoring**, des **tests** et une chaîne
 
 ---
 
+## Démo en une commande
+
+```bash
+make demo         # tout depuis zéro, rien à préparer
+```
+
+`make demo` crée l'environnement si besoin, installe les dépendances, calcule la
+cible AQI, entraîne le modèle (s'il manque), puis lance **l'API** et
+**l'application web** ensemble. Les URLs sont affichées dans le terminal :
+
+- Application : http://localhost:8510
+- API (Swagger) : http://localhost:8010/docs
+
+`Ctrl-C` arrête les deux services.
+
+---
+
 ## Pour les pressés (3 commandes)
 
 ```bash
