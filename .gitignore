@@ -1,0 +1,29 @@
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Model + pipeline outputs (tracked by DVC, not git)
+models/*.joblib
+data/*.csv
+
+# Reports / monitoring artifacts
+reports/figures/*.png
+reports/drift/*
+reports/alerts/*
+reports/predictions_log.jsonl
+
+# DVC cache (keep dvc.yaml, dvc.lock, .dvc/config)
+/.dvc/cache
+/.dvc/tmp
+
+# Artefacts temporaires de Playwright MCP (snapshots, logs, captures brutes)
+.playwright-mcp/
+
+.ipynb_checkpoints/
+.DS_Store
+
+
+.claude/

@@ -1,0 +1,27 @@
+# API + client Streamlit (C9 + C10). `docker compose up`.
+services:
+  api:
+    build: .
+    image: air-quality-api:latest
+    ports:
+      - "8000:8000"
+    environment:
+      API_KEY: ${API_KEY:-dev-local-key}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  app:
+    build: .
+    image: air-quality-api:latest
+    command: ["streamlit", "run", "app/streamlit_app.py", "--server.address=0.0.0.0", "--server.port=8501"]
+    ports:
+      - "8501:8501"
+    environment:
+      API_URL: http://api:8000
+      API_KEY: ${API_KEY:-dev-local-key}
+    depends_on:
+      - api

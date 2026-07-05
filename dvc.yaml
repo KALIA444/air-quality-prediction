@@ -1,0 +1,43 @@
+# Pipeline ML reproductible (C13 / MLOps). Lancer avec `dvc repro`.
+# Chaque etape reutilise la CLI du package ; les sorties sont suivies pour que DVC
+# ne reconstruise que ce qui a change lorsque les params ou les donnees changent.
+stages:
+  build_target:
+    cmd: python scripts/run.py build-target
+    deps:
+      - AirQualityData.csv
+      - src/air_quality/aqi.py
+      - src/air_quality/data.py
+      - src/air_quality/validation.py
+    outs:
+      - data/air_quality_with_aqi.csv
+
+  train:
+    cmd: python scripts/run.py train
+    deps:
+      - data/air_quality_with_aqi.csv
+      - src/air_quality/features.py
+      - src/air_quality/modeling.py
+    params:
+      - split.random_state
+      - split.test_size
+      - split.cv_folds
+      - models
+    outs:
+      - models/best_model.joblib
+    metrics:
+      - reports/metrics.json:
+          cache: false
+
+  evaluate:
+    cmd: python scripts/run.py evaluate
+    deps:
+      - models/best_model.joblib
+      - src/air_quality/evaluate.py
+    outs:
+      - reports/figures/pred_vs_actual.png:
+          cache: false
+      - reports/figures/residuals.png:
+          cache: false
+      - reports/figures/feature_importance.png:
+          cache: false

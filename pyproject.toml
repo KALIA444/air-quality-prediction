@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "air-quality-aqi"
+version = "0.1.0"
+description = "Pipeline de prediction de l'AQI EPA avec API REST, supervision et outillage MLOps"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.1",
+    "scikit-learn>=1.4",
+    "xgboost>=2.0",
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
+    "joblib>=1.3",
+    "pyyaml>=6.0",
+    "pandera>=0.18",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "pydantic>=2.6",
+    "slowapi>=0.1.9",
+    "prometheus-client>=0.20",
+    "prometheus-fastapi-instrumentator>=7.0",
+    "python-json-logger>=2.0",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+app = ["streamlit>=1.33"]
+monitoring = ["evidently>=0.4"]
+dev = ["pytest>=8.0", "pytest-cov>=5.0", "ruff>=0.4", "pre-commit>=3.7", "dvc>=3.50", "python-docx>=1.1", "python-pptx>=1.0"]
+
+[project.scripts]
+air-quality = "air_quality.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: full training run (deselect with -m 'not slow')",
+]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+src = ["src", "scripts", "app", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Scripts utilitaires de génération (rapport, slides) : groupements compacts tolérés.
+"scripts/generate_report.py" = ["E702"]
+"scripts/generate_slides.py" = ["E702"]

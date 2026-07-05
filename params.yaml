@@ -1,0 +1,20 @@
+# Hyperparametres et reglages de decoupage, suivis par DVC.
+# config.py lit ce fichier ; les valeurs ici remplacent les valeurs par defaut du code.
+split:
+  random_state: 42
+  test_size: 0.2
+  cv_folds: 5
+
+models:
+  random_forest:
+    n_estimators: 300
+  xgboost:
+    n_estimators: 400
+    learning_rate: 0.05
+    max_depth: 6
+    subsample: 0.9
+    colsample_bytree: 0.9
+
+monitoring:
+  # Fraction de colonnes derivees au-dela de laquelle une alerte de derive du jeu de donnees se declenche.
+  drift_share_threshold: 0.5

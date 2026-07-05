@@ -1,0 +1,64 @@
+{
+  "target": "AQI",
+  "n_train": 3200,
+  "n_test": 800,
+  "features": [
+    "CO(GT)",
+    "NOx(GT)",
+    "NO2(GT)",
+    "O3(GT)",
+    "SO2(GT)",
+    "PM2.5",
+    "PM10",
+    "Temperature",
+    "Humidity",
+    "Pressure",
+    "WindSpeed",
+    "WindDirection",
+    "CO_NOx_Ratio",
+    "NOx_NO2_Ratio",
+    "Temp_Humidity_Index",
+    "CO_MA3",
+    "NO2_MA3",
+    "O3_MA3",
+    "DayOfWeek",
+    "Hour",
+    "Month",
+    "Season",
+    "Hour_sin",
+    "Hour_cos",
+    "Month_sin",
+    "Month_cos",
+    "Wind_sin",
+    "Wind_cos",
+    "PM2.5_Temperature",
+    "O3_Humidity"
+  ],
+  "best_model": "random_forest",
+  "results": {
+    "linear_regression": {
+      "cv_r2_mean": 0.7204588619882673,
+      "cv_r2_std": 0.012900622979162524,
+      "cv_rmse_mean": 23.004881757201503,
+      "test_r2": 0.7437760194283466,
+      "test_rmse": 23.31323042908591,
+      "test_mae": 18.921173973643526
+    },
+    "random_forest": {
+      "cv_r2_mean": 0.9982056071393925,
+      "cv_r2_std": 0.0013176331024443927,
+      "cv_rmse_mean": 1.7524324082313794,
+      "test_r2": 0.9992580508313951,
+      "test_rmse": 1.254525939681334,
+      "test_mae": 0.4296
+    },
+    "xgboost": {
+      "cv_r2_mean": 0.9973424713933905,
+      "cv_r2_std": 0.0009336746882830418,
+      "cv_rmse_mean": 2.220472946133449,
+      "test_r2": 0.9986847311827329,
+      "test_rmse": 1.6703205768923581,
+      "test_mae": 0.9658818817138672
+    }
+  }
+}

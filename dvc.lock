@@ -1,0 +1,88 @@
+schema: '2.0'
+stages:
+  build_target:
+    cmd: python scripts/run.py build-target
+    deps:
+    - path: AirQualityData.csv
+      hash: md5
+      md5: d461c2962733e0157dc4b6863e23e8be
+      size: 1494774
+    - path: src/air_quality/aqi.py
+      hash: md5
+      md5: 783b0419aa6aab01a495bf807ec1e6b9
+      size: 5572
+    - path: src/air_quality/data.py
+      hash: md5
+      md5: 09f462bff6805e1de26cd35cb30cdf41
+      size: 1633
+    - path: src/air_quality/validation.py
+      hash: md5
+      md5: c01afc1e67d005cedd0702223e2baeea
+      size: 2602
+    outs:
+    - path: data/air_quality_with_aqi.csv
+      hash: md5
+      md5: 99aafb3ef13de7ebcf5e02df27cce9c7
+      size: 1472191
+  train:
+    cmd: python scripts/run.py train
+    deps:
+    - path: data/air_quality_with_aqi.csv
+      hash: md5
+      md5: 99aafb3ef13de7ebcf5e02df27cce9c7
+      size: 1472191
+    - path: src/air_quality/features.py
+      hash: md5
+      md5: 678f8c427fd975b215d798db43da539b
+      size: 1821
+    - path: src/air_quality/modeling.py
+      hash: md5
+      md5: ff8fc9c52a579558437270c35306a380
+      size: 4249
+    params:
+      params.yaml:
+        models:
+          random_forest:
+            n_estimators: 300
+          xgboost:
+            n_estimators: 400
+            learning_rate: 0.05
+            max_depth: 6
+            subsample: 0.9
+            colsample_bytree: 0.9
+        split.cv_folds: 5
+        split.random_state: 42
+        split.test_size: 0.2
+    outs:
+    - path: models/best_model.joblib
+      hash: md5
+      md5: ee633fb81b1a0d1f34ef358d3442090f
+      size: 19792906
+    - path: reports/metrics.json
+      hash: md5
+      md5: c5dc622b47b80ab24f41d82047557186
+      size: 1408
+  evaluate:
+    cmd: python scripts/run.py evaluate
+    deps:
+    - path: models/best_model.joblib
+      hash: md5
+      md5: ee633fb81b1a0d1f34ef358d3442090f
+      size: 19792906
+    - path: src/air_quality/evaluate.py
+      hash: md5
+      md5: b187128c48e2894e7d6a919d95fe55cd
+      size: 3295
+    outs:
+    - path: reports/figures/feature_importance.png
+      hash: md5
+      md5: 4cfe75ec843edc561005607a8128f38e
+      size: 35515
+    - path: reports/figures/pred_vs_actual.png
+      hash: md5
+      md5: 8aa4cb136c61126ec7b44f9773e5350c
+      size: 46622
+    - path: reports/figures/residuals.png
+      hash: md5
+      md5: 1c132a50848c15f6a5cead6f3faa8e4e
+      size: 35429
