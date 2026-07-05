@@ -1,0 +1,45 @@
+# Dockerfile.render — image autonome pour Render (C13 : deploiement cloud).
+#
+# Difference avec le Dockerfile principal : celui-ci NE COPIE PAS un modele
+# pre-entraine. Les artefacts (`models/best_model.joblib`, `reports/metrics.json`)
+# ne sont pas versionnes dans git (`models/*.joblib` est gitignore, `metrics.json`
+# n'est pas suivi), donc un build Render depuis le depot ne les trouverait pas.
+# On les REGENERE dans l'image via la CLI du pipeline. L'image reste ainsi
+# auto-suffisante et deterministe (le meme code + les memes params -> le meme modele).
+#
+# La meme image sert l'API FastAPI ou le client Streamlit ; Render choisit via
+# `dockerCommand` dans render.yaml.
+FROM python:3.12-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+# Installer d'abord le package (meilleure mise en cache des couches).
+COPY pyproject.toml README.md ./
+COPY src ./src
+# L'extra [app] ajoute Streamlit ; les deps d'entrainement (sklearn, xgboost,
+# pandas, pandera) sont deja dans les dependances de base.
+RUN pip install --upgrade pip && pip install ".[app]"
+
+# Code + donnees necessaires a la (re)generation du modele et au service.
+COPY params.yaml ./
+COPY scripts ./scripts
+COPY app ./app
+COPY AirQualityData.csv ./
+
+# Reconstruire la cible EPA AQI puis entrainer + selectionner le meilleur modele.
+# Produit models/best_model.joblib et reports/metrics.json a l'interieur de l'image.
+RUN python scripts/run.py build-target && python scripts/run.py train
+
+EXPOSE 8000
+
+# Utilisateur non-root ; chown APRES la generation (train tourne en root) pour que
+# l'API puisse ecrire reports/predictions_log.jsonl au runtime.
+RUN useradd -m appuser && chown -R appuser /app
+USER appuser
+
+# Render injecte $PORT ; la forme shell permet son expansion (defaut 8000 en local).
+CMD ["sh", "-c", "uvicorn air_quality.api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

@@ -1,0 +1,58 @@
+# render.yaml — Blueprint Render (C13 : deploiement cloud).
+#
+# Deux services web Docker construits depuis Dockerfile.render (qui regenere le
+# modele au build) :
+#   - air-quality-api : l'API FastAPI (auth par X-API-Key, /docs, /metrics)
+#   - air-quality-app : le client Streamlit, appelle l'API
+#
+# Deploiement : sur https://dashboard.render.com -> New -> Blueprint, pointer sur
+# ce depot. Render lit ce fichier et cree les deux services.
+#
+# Notes :
+#   * Render assigne $PORT ; le Dockerfile et les dockerCommand l'honorent.
+#   * API_KEY est genere une fois pour l'API et PARTAGE avec Streamlit
+#     (fromService/envVarKey) pour que les deux utilisent la meme cle.
+#   * API_URL doit pointer sur l'URL PUBLIQUE de l'API (sync:false). Render ne
+#     connait cette URL qu'apres le 1er deploiement : renseignez-la dans le
+#     dashboard du service Streamlit (ex. https://air-quality-api.onrender.com),
+#     puis redeployez. Voir docs/deployment_render.md.
+services:
+  # --- API FastAPI (surface de production principale) ----------------------
+  - type: web
+    name: air-quality-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile.render
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # Cle API generee par Render (secret, jamais dans le code).
+      - key: API_KEY
+        generateValue: true
+      # Origines CORS autorisees (separees par des virgules). Mettez l'URL du
+      # service Streamlit en prod ; "*" pour un test rapide.
+      - key: CORS_ORIGINS
+        sync: false
+
+  # --- Client Streamlit (optionnel) ----------------------------------------
+  - type: web
+    name: air-quality-app
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile.render
+    dockerContext: .
+    autoDeploy: true
+    dockerCommand: sh -c "streamlit run app/streamlit_app.py --server.address=0.0.0.0 --server.port=$PORT"
+    envVars:
+      # Reutilise EXACTEMENT la meme cle que l'API.
+      - key: API_KEY
+        fromService:
+          type: web
+          name: air-quality-api
+          envVarKey: API_KEY
+      # URL publique de l'API — a renseigner apres le 1er deploiement.
+      - key: API_URL
+        sync: false
