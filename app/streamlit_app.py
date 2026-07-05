@@ -53,6 +53,39 @@ FIELDS = [
     ("wind_direction", "Direction du vent (°)", 0.0, 360.0, 210.0),
 ]
 
+# Scénarios de démonstration : chaque bouton préremplit les champs pour illustrer
+# une catégorie d'AQI différente. Les valeurs sont calées sur ce que le MODÈLE
+# renvoie réellement (vérifié via /predict), pas sur la formule EPA brute :
+# le modèle a un plancher ≈ 71 (il ne produit jamais « Bon ») et sature à 278.
+# Sorties attendues : Modéré ≈ 71 -> Sensibles ≈ 133 -> Très mauvais = 278.
+PRESETS = {
+    "🟡 Qualité modérée": {
+        "co": 0.3, "nox": 5.0, "no2": 10.0, "o3": 25.0, "so2": 1.0,
+        "pm25": 10.0, "pm10": 20.0, "temperature": 22.0, "humidity": 50.0,
+        "pressure": 1015.0, "wind_speed": 12.0, "wind_direction": 180.0,
+    },
+    "🟠 Groupes sensibles": {
+        "co": 3.0, "nox": 90.0, "no2": 60.0, "o3": 70.0, "so2": 6.0,
+        "pm25": 48.0, "pm10": 90.0, "temperature": 28.0, "humidity": 55.0,
+        "pressure": 1012.0, "wind_speed": 6.0, "wind_direction": 200.0,
+    },
+    "🔴 Très mauvais": {
+        "co": 12.0, "nox": 400.0, "no2": 200.0, "o3": 180.0, "so2": 35.0,
+        "pm25": 140.0, "pm10": 300.0, "temperature": 35.0, "humidity": 30.0,
+        "pressure": 1008.0, "wind_speed": 2.0, "wind_direction": 150.0,
+    },
+}
+
+
+def _apply_preset(preset: dict) -> None:
+    """Callback bouton : écrit les valeurs du scénario dans l'état des champs.
+
+    Exécuté avant le rerun, donc les ``number_input`` récupèrent les nouvelles
+    valeurs depuis ``session_state``.
+    """
+    for key, value in preset.items():
+        st.session_state[f"f_{key}"] = float(value)
+
 
 def _client() -> httpx.Client:
     return httpx.Client(base_url=API_URL, headers={"X-API-Key": API_KEY}, timeout=15)
@@ -74,18 +107,31 @@ def render_result(result: dict) -> None:
 
 def single_prediction_tab() -> None:
     st.subheader("Prédiction unique")
+
+    # Initialise l'état des champs une seule fois (les widgets lisent ensuite
+    # leur valeur depuis session_state via leur clé).
+    for key, _label, _lo, _hi, default in FIELDS:
+        st.session_state.setdefault(f"f_{key}", default)
+
+    st.caption("Exemples rapides — cliquez pour préremplir les champs :")
+    preset_cols = st.columns(len(PRESETS))
+    for col, (name, preset) in zip(preset_cols, PRESETS.items()):
+        col.button(name, on_click=_apply_preset, args=(preset,),
+                   use_container_width=True,
+                   help="Remplit tous les champs avec ce scénario.")
+
     with st.form("predict_form"):
         when = st.text_input("Horodatage (ISO-8601)", value=datetime.now().isoformat(timespec="minutes"),
                              help="Heure d'observation ; influence les features calendaires.")
         cols = st.columns(3)
-        values = {}
-        for i, (key, label, lo, hi, default) in enumerate(FIELDS):
-            values[key] = cols[i % 3].number_input(
-                label, min_value=lo, max_value=hi, value=default,
+        for i, (key, label, lo, hi, _default) in enumerate(FIELDS):
+            cols[i % 3].number_input(
+                label, min_value=lo, max_value=hi, key=f"f_{key}",
                 help=f"Plage autorisée {lo}–{hi}.")
         submitted = st.form_submit_button("Prédire l'AQI")
 
     if submitted:
+        values = {key: st.session_state[f"f_{key}"] for key, *_ in FIELDS}
         payload = {"timestamp": when, **values}
         try:
             with _client() as c:

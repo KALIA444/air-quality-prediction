@@ -17,6 +17,9 @@ demo:
 	@echo ">> Calcul de la cible EPA AQI..."
 	@$(PY) scripts/run.py build-target
 	@test -f models/best_model.joblib || { echo ">> Entrainement du modele..."; $(PY) scripts/run.py train; }
+	@echo ">> Liberation des ports 8010 / 8510 si occupes..."
+	@-lsof -ti tcp:8010 -sTCP:LISTEN | xargs kill 2>/dev/null || true
+	@-lsof -ti tcp:8510 -sTCP:LISTEN | xargs kill 2>/dev/null || true
 	@echo ""
 	@echo ">> Demo prete. Ouvrez :"
 	@echo "     Application : http://localhost:8510"
